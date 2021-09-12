@@ -1,4 +1,4 @@
-# cpu_trottle
+# cpu_trottle.py
 Trottles CPU when getting hot - Python3 cli tool which can be run as a daemon systemd service.
 
 CPU Trottle is released under the terms of the GNU GPLv3 License.
@@ -8,11 +8,14 @@ Must be tested of different kind of hardware and linux kernel verions. Works on 
 Required packages
 -----------------
 This script requires package: cpufrequtils
-Install command for Ubuntu based distro's: sudo apt install cpufrequtils
+Install command for Ubuntu based distro's: `sudo apt install cpufrequtils`
+
+Python version 3.7 or higher
 
 How to stress test the CPU
 --------------------------
-Stress testing cpu with command: stress -c 4 -t 120s
+Stress testing cpu with command:
+`stress -c 4 -t 120s`
 With c the number of threads and t time in seconds to stress test.
 
 Install helpful Gnome extensions
@@ -23,6 +26,7 @@ Very helpful tools are: cpufreq and Freon for temperature and cpu speed measurem
 Make this script run as a systemd service
 ----------------------------------------
 Instructions for running the script as a systemd service daemon:
+```
 Step 1.
 sudo nano /etc/systemd/system/cpu_trottle.service
 
@@ -44,3 +48,4 @@ sudo systemctl daemon-reload
 Step 3.
 sudo systemctl enable cpu_trottle.service
 sudo systemctl start cpu_trottle.service
+```
