@@ -5,6 +5,8 @@ Script for throttling system CPU frequency based on a desired maximum temperatur
 
 CPU Trottle is released under the terms of the GNU GPLv3 License.
 
+Set a maximum temperature for your system using this tool. If the maximum temperature is exceeded, the script will limit the speed of all your CPU cores until the system is again below your desired maximum temperature. (If your system remains above maximum temperature after completely limiting your CPU cores, it will simply stay limited until temperatures drop below the maximum desired.)
+
 ```
 Usage: cpu_trottle.py [-h] [--time TIME] [--crit_temp CRIT_TEMP] [--debug]
 
