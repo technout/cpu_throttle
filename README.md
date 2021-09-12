@@ -1,9 +1,21 @@
 # cpu_trottle.py
 Trottles CPU when getting hot - Python3 cli tool which can be run as a daemon systemd service.
 
+Script for throttling system CPU frequency based on a desired maximum temperature (celsius).
+
 CPU Trottle is released under the terms of the GNU GPLv3 License.
 
-Must be tested of different kind of hardware and linux kernel verions. Works on modern AMD and Intel with Linux Kernel 5.4 and newer.
+```
+Usage: cpu_trottle.py [-h] [--time TIME] [--crit_temp CRIT_TEMP] [--debug]
+
+optional arguments:
+  -h, --help              show this help message and exit
+  --time TIME             Seconds to cooldown cpu before next check, default is 30 seconds.
+  --crit_temp CRIT_TEMP   Temp for cpu to trottle down (temperature in celcius degrees)
+  --debug                 Output more information when set to True.
+```
+
+Works on modern AMD and Intel CPU's with Linux Kernel 5.4 and newer.
 
 Required packages
 -----------------
