@@ -2,8 +2,12 @@
 # -*- coding: utf-8 -*-
 
 # Copyright 2021 - Technout
+# URL: https://github.com/technout/cpu_trottle
 
-"""CPU Trottle is released under the terms of the GNU GPLv3 License.
+"""
+Python3 Linux script for throttling system CPU frequency based on a desired maximum temperature (celsius).
+
+CPU Trottle is released under the terms of the GNU GPLv3 License.
 
 This script requires package: cpufrequtils
 Install command for Ubuntu based distro's: sudo apt install cpufrequtils
