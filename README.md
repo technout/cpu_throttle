@@ -17,7 +17,7 @@ optional arguments:
                           Default is 64 degrees.
   --debug                 Output more information when set to True.
 
-Example: sudo cpu_trottle.py --time 15 --crit_temp 45 --debug
+Example: sudo cpu_trottle.py --crit_temp 45 --time 15 --debug
 
 This will keep cpu temp below 45 degrees celcius (most of the time) and let ik cool down
 at a lower speed for 15 seconds. Also it prints all debug messages to screen (and to logfile).
