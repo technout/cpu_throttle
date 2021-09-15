@@ -114,6 +114,9 @@ def getTemp(hardware):
         return 0
     # logging.debug(f"Temp is {temp}")
     # logging.debug(f"Temp is an integer: {isinstance(temp, int)}")
+    temp = float(temp)
+    if temp < 1000:
+        temp = temp * 1000
     return int(temp)
 
 def getMinMaxFrequencies(hardware):
