@@ -54,7 +54,7 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-version = "1.0-2021.09.12"
+version = "1.0-2021.09.15"
 
 def getArguments():
     parser = argparse.ArgumentParser()
@@ -171,6 +171,8 @@ def main():
     if os.geteuid() != 0:
         logging.warning('Script needs to be root to work.')
     hardware = hardwareCheck()
+    logging.debug(f'Detected hardware/kernel type is {hardware}')
+    logging.debug(f'Edit getHardware() if it does not comply to your system.')
     if hardware == 0:
         logging.warning("Sorry, this hardware is not supported")
         sys.exit()

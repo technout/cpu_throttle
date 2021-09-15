@@ -13,8 +13,12 @@ Usage: cpu_trottle.py [-h] [--time TIME] [--crit_temp CRIT_TEMP] [--debug]
 optional arguments:
   -h, --help              show this help message and exit
   --time TIME             Seconds to cooldown cpu before next check, default is 30 seconds.
-  --crit_temp CRIT_TEMP   Temp for cpu to trottle down (temperature in celcius degrees)
+  --crit_temp CRIT_TEMP   Temp for cpu to trottle down (temperature in celcius degrees), default is 64.
   --debug                 Output more information when set to True.
+
+Example: sudo cpu_trottle.py --time=15 --crit_temp=45 --debug
+
+This will keep cpu temp below 45 degrees celcius (most of the time) and let ik cool down at a lower speed for 15 seconds. Also it prints all debug messages to screen (and to logfile).
 ```
 
 Works on modern AMD and Intel CPU's with Linux Kernel 5.4 and newer.
