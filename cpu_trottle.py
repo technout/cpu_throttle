@@ -43,7 +43,7 @@ sudo systemctl start cpu_trottle.service
 """
 
 import os, sys, time, argparse
-import subprocess, logging
+import subprocess, logging, signal
 # logging.basicConfig(filename='cpu_trottle.log', level=logging.DEBUG)
 # logFormatter = logging.Formatter("%(asctime)s %(filename)s: " + fmt.format("%(levelname)s") + " %(message)s", "%Y/%m/%d %H:%M:%S")
 logging.basicConfig(
@@ -54,7 +54,7 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-version = "1.0-2021.09.15"
+version = "1.1-2021.09.21"
 
 def getArguments():
     parser = argparse.ArgumentParser()
@@ -127,12 +127,12 @@ def getMinMaxFrequencies(hardware):
             max_freq = mem1.read().strip()
         return (min_freq, max_freq)
     else:
-        freq = subprocess.run('cpufreq-info -l', shell=True, stdout=subprocess.PIPE)
+        freq = subprocess.run('cpufreq-info -p', shell=True, stdout=subprocess.PIPE)
         if freq.returncode != 0:
             logging.warning('cpufreq-info gives error, cpufrequtils package installed?')
             return (0, 0)
         else:
-            return tuple(map(int, freq.stdout.decode('utf-8').split(' ')))
+            return tuple(freq.stdout.decode('utf-8').strip().lower().split(' '))
 
 def setMaxFreq(frequency, hardware, cores):
     try:
@@ -156,6 +156,29 @@ def setGovernor(hardware, governor):
     if hardware == 6 :
         if subprocess.run(f'cpufreq-set -g {governor}', shell=True).returncode != 0:
             logging.warning('cpufreq-set gives error, cpufrequtils package installed?')
+    else:
+        logging.warning('This hardware setup is not completely implemented yet!')
+
+def getCovernors(hardware):
+    if hardware == 6 :
+        govs = subprocess.run('cpufreq-info -g', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if govs.returncode != 0:
+            logging.warning('cpufreq-info gives error, cpufrequtils package installed?')
+            return ()
+        else:
+            logging.debug(f'cpufreq-info governors: {govs.stdout.decode().strip()}')
+            if govs.stdout is None:
+                logging.warning('No covernors found!?')
+                logging.debug(f'Govs: {govs.stdout.decode()}')
+                return ()
+            else:
+                return tuple(govs.stdout.decode('utf-8').lower().split(' '))
+    else:
+        logging.warning('This hardware setup is not completely implemented yet!')
+        return ()
+
+def signal_term_handler(self, args):
+    raise KeyboardInterrupt()
 
 def main():
     global version
@@ -163,6 +186,8 @@ def main():
     cur_temp = 0
     governor_high = 'ondemand'
     governor_low = 'powersave'
+    cur_governor = ''
+    govs = ()
     relax_time, crit_temp, debug = getArguments()
     logging.debug(f'critic_temp: {crit_temp}, relaxtime: {relax_time}, debug: {debug}')
     cores = os.cpu_count()
@@ -172,15 +197,27 @@ def main():
         logging.warning('Script needs to be root to work.')
     hardware = hardwareCheck()
     logging.debug(f'Detected hardware/kernel type is {hardware}')
-    logging.debug(f'Edit getHardware() if it does not comply to your system.')
+    logging.debug(f'If it does not comply to your system, edit getHardware')
     if hardware == 0:
         logging.warning("Sorry, this hardware is not supported")
         sys.exit()
     freq = getMinMaxFrequencies(hardware)
-    logging.debug(f'min max: {freq}')
+    logging.debug(f'min max gov: {freq}')
     min_freq = int(freq[0])
     max_freq = int(freq[1])
+    if freq[2] is not None:
+        cur_governor = freq[2]
+    govs = getCovernors(hardware)
+    if governor_high not in govs:
+        governor_high = 'performance'
+    if governor_low not in govs:
+        logging.warning('Wait, powersave mode not in governors list?')
+        governor_low = 'userspace'
 
+# $ echo "performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+
+    signal.signal(signal.SIGINT, signal_term_handler)
+    signal.signal(signal.SIGTERM, signal_term_handler)
     try:
         while True:
             cur_temp = getTemp(hardware)
@@ -199,8 +236,10 @@ def main():
                 setMaxFreq(max_freq, hardware, cores)
             time.sleep(3)
     except KeyboardInterrupt:
-        logging.warning('Terminating, setting max cpu back to normal.')
-        setGovernor(hardware, governor_high)
+        logging.warning('Terminating')
+    finally:
+        logging.warning('Setting max cpu and governor back to normal.')
+        setGovernor(hardware, cur_governor)
         setMaxFreq(max_freq, hardware, cores)
 
 if __name__ == '__main__':
