@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 # Copyright 2021 - Technout
-# URL: https://github.com/technout/cpu_trottle
+# URL: https://github.com/technout/cpu_throttle
 
 """
 Python3 Linux script for throttling system CPU frequency based on a desired maximum temperature (celsius).
 
-CPU Trottle is released under the terms of the GNU GPLv3 License.
+CPU Throttle is released under the terms of the GNU GPLv3 License.
 
 This script requires package: cpufrequtils
 Install command for Ubuntu based distro's: sudo apt install cpufrequtils
@@ -20,16 +20,16 @@ Very helpful tools are: cpufreq and Freon for temperature and cpu speed measurem
 
 Instructions for running the script as a systemd service daemon:
 Step 1.
-sudo nano /etc/systemd/system/cpu_trottle.service
+sudo nano /etc/systemd/system/cpu_throttle.service
 
 [Unit]
-Description=Trottles cpu speed at defined temperature
+Description=Throttles cpu speed at defined temperature
 After=multi-user.target
 
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/bin/python3 /home/<username>/cpu_trottle.py
+ExecStart=/usr/bin/python3 /home/<username>/cpu_throttle.py
 
 [Install]
 WantedBy=multi-user.target
@@ -38,13 +38,13 @@ Step 2.
 sudo systemctl daemon-reload
 
 Step 3.
-sudo systemctl enable cpu_trottle.service
-sudo systemctl start cpu_trottle.service
+sudo systemctl enable cpu_throttle.service
+sudo systemctl start cpu_throttle.service
 """
 
 import os, sys, time, argparse
 import subprocess, logging, signal
-# logging.basicConfig(filename='cpu_trottle.log', level=logging.DEBUG)
+# logging.basicConfig(filename='cpu_throttle.log', level=logging.DEBUG)
 # logFormatter = logging.Formatter("%(asctime)s %(filename)s: " + fmt.format("%(levelname)s") + " %(message)s", "%Y/%m/%d %H:%M:%S")
 if os.geteuid() != 0:
     exit('You need to run this with root privileges. Please try again with sudo.')
@@ -52,16 +52,16 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)8s] %(message)s",
     handlers=[
-        logging.FileHandler("/var/log/cpu_trottle.log"),
+        logging.FileHandler("/var/log/cpu_throttle.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )
-version = "1.1-2021.09.22"
+version = "1.2-2021.09.22"
 
 def getArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--time', type=int, help='Seconds to cooldown cpu before next check, default is 30 seconds.')
-    parser.add_argument('--crit_temp', type=int, help='Temp for cpu to trottle down (temperature in celcius degrees)')
+    parser.add_argument('--crit_temp', type=int, help='Temp for cpu to throttle down (temperature in celcius degrees)')
     parser.add_argument('--debug', action='store_true', help='Output more information when set to True.')
     args = parser.parse_args()
     if args.time is None:
