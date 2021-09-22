@@ -46,15 +46,17 @@ import os, sys, time, argparse
 import subprocess, logging, signal
 # logging.basicConfig(filename='cpu_trottle.log', level=logging.DEBUG)
 # logFormatter = logging.Formatter("%(asctime)s %(filename)s: " + fmt.format("%(levelname)s") + " %(message)s", "%Y/%m/%d %H:%M:%S")
+if os.geteuid() != 0:
+    exit('You need to run this with root privileges. Please try again with sudo.')
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)8s] %(message)s",
     handlers=[
-        logging.FileHandler("cpu_trottle.log"),
+        logging.FileHandler("/var/log/cpu_trottle.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )
-version = "1.1-2021.09.21"
+version = "1.1-2021.09.22"
 
 def getArguments():
     parser = argparse.ArgumentParser()
@@ -77,13 +79,13 @@ def getArguments():
     return relaxtime, crit_temp, args.debug
 
 def hardwareCheck():
-	import os
+    # does this work: $ echo "performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 	if os.path.exists("/sys/devices/LNXSYSTM:00/LNXTHERM:00/LNXTHERM:01/thermal_zone/temp") == True:
 		return  4
 	elif os.path.exists("/sys/bus/acpi/devices/LNXTHERM:00/thermal_zone/temp") == True:
-		return  5
+		return  5 # intel
 	elif os.path.exists("/sys/class/hwmon/hwmon0") == True:
-		return  6
+		return  6 # amd
 	elif os.path.exists("/proc/acpi/thermal_zone/THM0/temperature") == True:
 		return  1
 	elif os.path.exists("/proc/acpi/thermal_zone/THRM/temperature") == True:
@@ -135,47 +137,31 @@ def getMinMaxFrequencies(hardware):
             return tuple(freq.stdout.decode('utf-8').strip().lower().split(' '))
 
 def setMaxFreq(frequency, hardware, cores):
-    try:
-        if hardware == 6 :
-            logging.info(f"Set max frequency to {int(frequency/1000)} MHz")
-            # with open('cpu_freq_test.txt', 'w') as f:
-            #     f.write(str(frequency))
-            # with open('/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq', 'w') as f:
-                # f.write(str(frequency))
-            for x in range(cores):
-                logging.debug(f'Setting core {x} to {frequency} KHz')
-                if subprocess.run(f'cpufreq-set -c {x} --max {frequency}', shell=True).returncode != 0:
-                    logging.warning('cpufreq-set gives error, cpufrequtils package installed?')
-                    break
-    except PermissionError:
-        logging.warning('No permissions to write to system files. Script needs to be run as root.')
-        logging.warning('Max CPU frequency cannot be changed.')
-    return 0
+    if hardware == 6 :
+        logging.info(f"Set max frequency to {int(frequency/1000)} MHz")
+        for x in range(cores):
+            logging.debug(f'Setting core {x} to {frequency} KHz')
+            if subprocess.run(f'cpufreq-set -c {x} --max {frequency}', shell=True).returncode != 0:
+                logging.warning('cpufreq-set gives error, cpufrequtils package installed?')
+                break
 
 def setGovernor(hardware, governor):
-    if hardware == 6 :
-        if subprocess.run(f'cpufreq-set -g {governor}', shell=True).returncode != 0:
-            logging.warning('cpufreq-set gives error, cpufrequtils package installed?')
-    else:
-        logging.warning('This hardware setup is not completely implemented yet!')
+    if subprocess.run(f'cpufreq-set -g {governor}', shell=True).returncode != 0:
+        logging.warning('cpufreq-set gives error, cpufrequtils package installed?')
 
 def getCovernors(hardware):
-    if hardware == 6 :
-        govs = subprocess.run('cpufreq-info -g', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if govs.returncode != 0:
-            logging.warning('cpufreq-info gives error, cpufrequtils package installed?')
+    govs = subprocess.run('cpufreq-info -g', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if govs.returncode != 0:
+        logging.warning('cpufreq-info gives error, cpufrequtils package installed?')
+        return ()
+    else:
+        logging.debug(f'cpufreq-info governors: {govs.stdout.decode().strip()}')
+        if govs.stdout is None:
+            logging.warning('No covernors found!?')
+            logging.debug(f'Govs: {govs.stdout.decode()}')
             return ()
         else:
-            logging.debug(f'cpufreq-info governors: {govs.stdout.decode().strip()}')
-            if govs.stdout is None:
-                logging.warning('No covernors found!?')
-                logging.debug(f'Govs: {govs.stdout.decode()}')
-                return ()
-            else:
-                return tuple(govs.stdout.decode('utf-8').lower().split(' '))
-    else:
-        logging.warning('This hardware setup is not completely implemented yet!')
-        return ()
+            return tuple(govs.stdout.decode('utf-8').lower().split(' '))
 
 def signal_term_handler(self, args):
     raise KeyboardInterrupt()
@@ -193,11 +179,8 @@ def main():
     cores = os.cpu_count()
     if cores is None:
         cores = 16
-    if os.geteuid() != 0:
-        logging.warning('Script needs to be root to work.')
     hardware = hardwareCheck()
     logging.debug(f'Detected hardware/kernel type is {hardware}')
-    logging.debug(f'If it does not comply to your system, edit getHardware')
     if hardware == 0:
         logging.warning("Sorry, this hardware is not supported")
         sys.exit()
@@ -213,9 +196,6 @@ def main():
     if governor_low not in govs:
         logging.warning('Wait, powersave mode not in governors list?')
         governor_low = 'userspace'
-
-# $ echo "performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
-
     signal.signal(signal.SIGINT, signal_term_handler)
     signal.signal(signal.SIGTERM, signal_term_handler)
     try:
