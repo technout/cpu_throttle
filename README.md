@@ -1,11 +1,12 @@
 # cpu_trottle.py
-Trottles CPU when getting hot - Python3 cli tool which can be run as a daemon systemd service.
+Trottle / limit CPU power when getting hot - Python3 cli tool which also can run as a daemon systemd service or in the background.
 
-Script for throttling system CPU frequency based on a desired maximum temperature (celsius).
+Script for throttling system CPU frequency based on your desired maximum temperature (celsius).
 
 CPU Trottle is released under the terms of the GNU GPLv3 License.
 
 Set a maximum temperature for your system using this tool. If the maximum temperature is exceeded, the script will limit the speed of all your CPU cores until the system is again below your desired maximum temperature. (If your system remains above maximum temperature after completely limiting your CPU cores, it will simply stay limited until temperatures drop below the maximum desired.)
+When you exit or kill the script, the limitation is automatically released and cpu can run at maximum speed again.
 
 Version 1.1
 -----------
@@ -26,8 +27,8 @@ optional arguments:
 
 Example: sudo cpu_trottle.py --crit_temp 45 --time 15 --debug
 
-This will keep cpu temp below 45 degrees celcius (most of the time) and let ik cool down
-at a lower speed for 15 seconds. Also it prints all debug messages to screen (and to logfile).
+This will keep cpu temp below 45 degrees celcius (most of the time) and let cpu cool down
+at a lower speed for 15 seconds, before checking again. Also it prints all debug messages to screen (and to logfile).
 ```
 
 Works on modern AMD and Intel CPU's with Linux Kernel 5.4 and newer.
