@@ -1,4 +1,4 @@
-# cpu_trottle.py
+# cpu_throttle.py
 Throttle / limit CPU power when getting hot - Python3 cli tool which also can run as a daemon systemd service or in the background.
 
 Script for throttling system CPU frequency based on your desired maximum temperature (celsius).
