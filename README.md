@@ -17,7 +17,7 @@ Version 1.2
 Usage
 -----
 ```
-Usage: cpu_trottle.py [-h] [--time TIME] [--crit_temp CRIT_TEMP] [--debug]
+Usage: cpu_throttle.py [-h] [--time TIME] [--crit_temp CRIT_TEMP] [--debug]
 
 optional arguments:
   -h, --help              show this help message and exit
