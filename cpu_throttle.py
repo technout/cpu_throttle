@@ -56,7 +56,7 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-version = "1.2-2021.09.22"
+version = "1.2-2021.09.23"
 
 def getArguments():
     parser = argparse.ArgumentParser()
@@ -80,21 +80,23 @@ def getArguments():
 
 # determine hardware and kernel types
 def hardwareCheck():
-    # does this work: $ echo "performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
-	if os.path.exists("/sys/devices/LNXSYSTM:00/LNXTHERM:00/LNXTHERM:01/thermal_zone/temp") == True:
-		return  4
-	elif os.path.exists("/sys/bus/acpi/devices/LNXTHERM:00/thermal_zone/temp") == True:
-		return  5 # intel
-	elif os.path.exists("/sys/class/hwmon/hwmon0") == True:
-		return  6 # amd
-	elif os.path.exists("/proc/acpi/thermal_zone/THM0/temperature") == True:
-		return  1
-	elif os.path.exists("/proc/acpi/thermal_zone/THRM/temperature") == True:
-		return  2
-	elif os.path.exists("/proc/acpi/thermal_zone/THR1/temperature") == True:
-		return  3
-	else:
-		return 0
+# does this work: $ echo "performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+    if os.path.exists("/sys/devices/LNXSYSTM:00/LNXTHERM:00/LNXTHERM:01/thermal_zone/temp") == True:
+        return 4
+    elif os.path.exists("/sys/bus/acpi/devices/LNXTHERM:00/thermal_zone/temp") == True:
+        return 5 # intel
+    elif os.path.exists("/sys/class/hwmon/hwmon0") == True:
+        return 6 # amd
+    elif os.path.exists("/sys/class/thermal/thermal_zone3/")  == True:
+        return 7 # intel
+    elif os.path.exists("/proc/acpi/thermal_zone/THM0/temperature") == True:
+        return 1
+    elif os.path.exists("/proc/acpi/thermal_zone/THRM/temperature") == True:
+        return 2
+    elif os.path.exists("/proc/acpi/thermal_zone/THR1/temperature") == True:
+        return 3
+    else:
+        return 0
 
 # depending on the kernel and hardware config, read the temperature
 def getTemp(hardware):
@@ -111,9 +113,9 @@ def getTemp(hardware):
         temp = open("/proc/acpi/thermal_zone/THR1/temperature").read().strip().lstrip('temperature :').rstrip(' C')
     elif hardware == 4 :
         temp = open("/sys/devices/LNXSYSTM:00/LNXTHERM:00/LNXTHERM:01/thermal_zone/temp").read().strip().rstrip('000')
-    elif hardware == 5 :
-        temp = open("/sys/bus/acpi/devices/LNXTHERM:00/thermal_zone/temp").read().strip().rstrip('000')
-        temp = str(float(temp)/10.0)
+    elif hardware == 5 or hardware == 7:
+        with open("/sys/class/thermal/thermal_zone3/temp") as mem1:
+            temp = mem1.read().strip()
     else:
         return 0
     # logging.debug(f"Temp is {temp}")
@@ -124,22 +126,23 @@ def getTemp(hardware):
     return int(temp)
 
 def getMinMaxFrequencies(hardware):
-    if hardware == 5:
-        with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq", 'r') as mem1:
-            min_freq = mem1.read().strip()
-        with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", 'r') as mem1:
-            max_freq = mem1.read().strip()
-        return (min_freq, max_freq)
+    if hardware == 0:
+        # with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq", 'r') as mem1:
+        #     min_freq = mem1.read().strip()
+        # with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", 'r') as mem1:
+        #     max_freq = mem1.read().strip()
+        # return (min_freq, max_freq, '')
+        pass
     else:
         freq = subprocess.run('cpufreq-info -p', shell=True, stdout=subprocess.PIPE)
         if freq.returncode != 0:
             logging.warning('cpufreq-info gives error, cpufrequtils package installed?')
-            return (0, 0)
+            return (0, 0, 0)
         else:
             return tuple(freq.stdout.decode('utf-8').strip().lower().split(' '))
 
 def setMaxFreq(frequency, hardware, cores):
-    if hardware == 6 :
+    if hardware != 0 :
         logging.info(f"Set max frequency to {int(frequency/1000)} MHz")
         for x in range(cores):
             logging.debug(f'Setting core {x} to {frequency} KHz')
@@ -163,7 +166,7 @@ def getCovernors(hardware):
             logging.debug(f'Govs: {govs.stdout.decode()}')
             return ()
         else:
-            return tuple(govs.stdout.decode('utf-8').lower().split(' '))
+            return tuple(govs.stdout.decode('utf-8').strip().lower().split(' '))
 
 # if proces receives a kill signal or sigterm,
 # raise an error and handle it in the finally statement for a proper exit
@@ -200,6 +203,7 @@ def main():
     if governor_low not in govs:
         logging.warning('Wait, powersave mode not in governors list?')
         governor_low = 'userspace'
+    # logging.debug(f'govs received: {govs}')
     signal.signal(signal.SIGINT, signal_term_handler)
     signal.signal(signal.SIGTERM, signal_term_handler)
     try:
