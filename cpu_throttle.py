@@ -78,6 +78,7 @@ def getArguments():
         logging.getLogger().setLevel(logging.INFO)
     return relaxtime, crit_temp, args.debug
 
+# determine hardware and kernel types
 def hardwareCheck():
     # does this work: $ echo "performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 	if os.path.exists("/sys/devices/LNXSYSTM:00/LNXTHERM:00/LNXTHERM:01/thermal_zone/temp") == True:
@@ -95,6 +96,7 @@ def hardwareCheck():
 	else:
 		return 0
 
+# depending on the kernel and hardware config, read the temperature
 def getTemp(hardware):
     temp = 0
     if hardware == 6 :
@@ -163,6 +165,8 @@ def getCovernors(hardware):
         else:
             return tuple(govs.stdout.decode('utf-8').lower().split(' '))
 
+# if proces receives a kill signal or sigterm,
+# raise an error and handle it in the finally statement for a proper exit
 def signal_term_handler(self, args):
     raise KeyboardInterrupt()
 
