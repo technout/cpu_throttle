@@ -176,7 +176,7 @@ def main():
     cur_temp = 0
     governor_high = 'ondemand'
     governor_low = 'powersave'
-    cur_governor = ''
+    cur_governor = 'performance'
     govs = ()
     relax_time, crit_temp, debug = getArguments()
     logging.debug(f'critic_temp: {crit_temp}, relaxtime: {relax_time}, debug: {debug}')
