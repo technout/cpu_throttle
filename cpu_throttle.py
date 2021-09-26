@@ -56,7 +56,7 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-version = "1.2-2021.09.23"
+version = "1.2-2021.09.25"
 
 def getArguments():
     parser = argparse.ArgumentParser()
@@ -101,19 +101,22 @@ def hardwareCheck():
 # depending on the kernel and hardware config, read the temperature
 def getTemp(hardware):
     temp = 0
-    if hardware == 6 :
+    if hardware == 6:
         # logging.debug('reading temp..')
         with open("/sys/class/hwmon/hwmon0/temp1_input", 'r') as mem1:
             temp = mem1.read().strip()
-    elif hardware == 1 :
+    elif hardware == 1:
         temp = open("/proc/acpi/thermal_zone/THM0/temperature").read().strip().lstrip('temperature :').rstrip(' C')
-    elif hardware == 2 :
+    elif hardware == 2:
         temp = open("/proc/acpi/thermal_zone/THRM/temperature").read().strip().lstrip('temperature :').rstrip(' C')
-    elif hardware == 3 :
+    elif hardware == 3:
         temp = open("/proc/acpi/thermal_zone/THR1/temperature").read().strip().lstrip('temperature :').rstrip(' C')
-    elif hardware == 4 :
+    elif hardware == 4:
         temp = open("/sys/devices/LNXSYSTM:00/LNXTHERM:00/LNXTHERM:01/thermal_zone/temp").read().strip().rstrip('000')
-    elif hardware == 5 or hardware == 7:
+    elif hardware == 5:
+        with open("/sys/class/thermal/thermal_zone0/temp") as mem1:
+            temp = mem1.read().strip()
+    elif hardware == 7:
         with open("/sys/class/thermal/thermal_zone3/temp") as mem1:
             temp = mem1.read().strip()
     else:
